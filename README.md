@@ -1,6 +1,7 @@
 # log-monitor
 
-HTTP log monitor - console application.
+HTTP log monitor - console application. Program uses queues and Producer-Consumer
+pattern to process the logs, keep stats and handle alerting.
 
 
 ## Dependencies
@@ -8,6 +9,7 @@ HTTP log monitor - console application.
 pygtail - reads log file lines that have not been read and stores offset.
 python-dateutil - parsing timestamps.
 watchdog - used for system agnostic file watching.
+blessed - for a nice terminal UI.
 
 
 ## Installation
@@ -32,7 +34,9 @@ echo '64.242.88.10 - - [07/Mar/2004:16:56:50 -0800] "GET /twiki/bin HTTP/1.1" 20
 
 - create a library from pygtail and watchdog (remove extra complexity, read logs back for the total traffic alert)
 - configuration file
-- Gevent and multiprocessing
+- better dashboard
+- Gevent and multiprocessing (lower memory footprint and possible better scaling vs process isolation)
 - asyncio
-- DB (offset and sending a message in a transaction)
-- rate-limiting ?
+- timezone changes
+- rate-limiting/throttling
+- integration tests and more UTs 

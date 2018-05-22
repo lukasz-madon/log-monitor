@@ -2,7 +2,9 @@ from collections import defaultdict, deque
 from threading import Timer
 import time
 import os
+import sys
 
+from blessed import Terminal
 from watchdog.observers import Observer
 
 from log_processor import LogFileProcessor
@@ -21,31 +23,42 @@ PARANOID = os.environ.get('LOG_PARANOID_OFFSET', True)
 DASHBOARD_REFRESH_RATE = os.environ.get('DASHBOARD_REFRESH_RATE', 10)
 HIGH_TRAFFIC_LIMIT = os.environ.get('HIGH_TRAFFIC_LIMIT', 10)
 
-
 msg_queue = deque()
 stats = defaultdict(int)
 
 
-def display_stats(stats):
-    t = Timer(DASHBOARD_REFRESH_RATE, display_stats, [stats])
-    t.daemon = True
-    t.start()
-    print("Alerts", msg_queue)
-    print("Stats")
-    for section, count in stats.items():
-        print(f"{section}: {count}")
+def display_stats(stats, msg_queue, term):
+    timer = Timer(
+        DASHBOARD_REFRESH_RATE, display_stats, [stats, msg_queue, term]
+    )
+    timer.daemon = True
+    timer.start()
+
+    sorted_stats = sorted(stats.items(), key=lambda x: (-x[1], x[0]))
+    print(term.bold('Current Stats:'))
+    for section, count in sorted_stats:
+        print(f'{section}: {count}')
+
+    # we limit to the last 10 messages. To show user some history.
+    while len(msg_queue) > 10:
+        msg_queue.pop()
+
+    print(term.bold('Alerts history:'))
+    if msg_queue and msg_queue[0].startswith('alert'):
+        print(term.red('Warning! Alert not recovered'))
+
+    for msg in msg_queue:
+        if msg.startswith('alert'):
+            print(term.red_reverse(msg))
+        else:
+            print(term.green_reverse(msg))
 
 
-# while True:
-#     entry = log_queue.get()
-#     if not entry:
-#         break
-#     section = get_section(entry)
-#     stats[section] += 1
-#     log_queue.task_done()
+if __name__ == '__main__':
+    term = Terminal()
+    print(term.bold(f'HTTP log monitoring for {LOG_FILE_PATH}'))
+    display_stats(stats, msg_queue, term)
 
-if __name__ == "__main__":
-    display_stats(stats)
     event_handler = LogFileProcessor(
         LOG_FILE_PATH,
         OFFSET_FILE,
@@ -60,7 +73,7 @@ if __name__ == "__main__":
     observer.start()
     try:
         while True:
-            time.sleep(1)
+            time.sleep(1)  # for easy development
     except KeyboardInterrupt:
         observer.stop()
     observer.join()

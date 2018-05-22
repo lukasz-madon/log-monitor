@@ -7,9 +7,11 @@ name = "pypi"
 pygtail = "*"
 python-dateutil = "*"
 watchdog = "*"
+blessed = "*"
 
 [dev-packages]
 pytest = "*"
+mypy = "*"
 
 [requires]
 python_version = "3.6"
