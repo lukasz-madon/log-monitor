@@ -79,6 +79,9 @@ class LogFileProcessor(PatternMatchingEventHandler):
     def read_log(self):
         """read logs file and puts the result on the queue"""
         for line in Pygtail(self.log_file, self.offset_file, self.paranoid):
+            if line == "\n":
+                continue
+
             entry = parse_log_line(line)
             section = get_section(entry)
             self.stats[section] += 1
